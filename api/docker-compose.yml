@@ -1,0 +1,99 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: ./
+      dockerfile: ./.docker/prod/app/Dockerfile
+      args:
+        IMAGE_REGISTRY: ${IMAGE_REGISTRY}
+        IMAGE_TAG: ${IMAGE_TAG}
+    image: ${IMAGE_REGISTRY:-local}/api-app:${IMAGE_TAG:-latest}
+    volumes:
+      - ./storage:/var/www/html/storage
+    links:
+      - postgres
+      - redis
+    hostname: api
+    expose:
+      - 8000
+    networks:
+      - api
+      - gateway
+    restart: unless-stopped
+
+  queue:
+    build:
+      context: ./
+      dockerfile: ./.docker/prod/queue/Dockerfile
+      args:
+        IMAGE_REGISTRY: ${IMAGE_REGISTRY}
+        IMAGE_TAG: ${IMAGE_TAG}
+    image: ${IMAGE_REGISTRY:-local}/api-queue:${IMAGE_TAG:-latest}
+    volumes:
+      - ./storage:/var/www/html/storage
+    links:
+      - postgres
+      - redis
+    networks:
+      - api
+    restart: unless-stopped
+
+  schedule:
+    build:
+      context: ./
+      dockerfile: ./.docker/prod/schedule/Dockerfile
+      args:
+        IMAGE_REGISTRY: ${IMAGE_REGISTRY}
+        IMAGE_TAG: ${IMAGE_TAG}
+    image: ${IMAGE_REGISTRY:-local}/api-schedule:${IMAGE_TAG:-latest}
+    volumes:
+      - ./storage:/var/www/html/storage
+    links:
+      - postgres
+      - redis
+    networks:
+      - api
+    restart: unless-stopped
+
+  postgres:
+    build:
+      context: ./
+      dockerfile: ./.docker/prod/postgres/Dockerfile
+    image: ${IMAGE_REGISTRY:-local}/api-postgres:${IMAGE_TAG:-latest}
+    environment:
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    networks:
+      - api
+    restart: unless-stopped
+
+  redis:
+    build:
+      context: ./
+      dockerfile: ./.docker/prod/redis/Dockerfile
+    image: ${IMAGE_REGISTRY:-local}/api-redis:${IMAGE_TAG:-latest}
+    volumes:
+      - redis:/data
+    networks:
+      - api
+    restart: unless-stopped
+
+volumes:
+  postgres:
+    driver: local
+
+  redis:
+    driver: local
+
+networks:
+  api:
+    name: api
+    driver: overlay
+
+  gateway:
+    name: gateway
+    external: true
