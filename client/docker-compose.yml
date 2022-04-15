@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: ./
+      dockerfile: ./.docker/prod/app/Dockerfile
+    image: ${IMAGE_REGISTRY:-local}/client-app:${IMAGE_TAG:-latest}
+    hostname: client
+    expose:
+      - 3000
+    networks:
+      - client
+      - gateway
+    restart: unless-stopped
+
+networks:
+  client:
+    name: client
+    driver: overlay
+
+  gateway:
+    name: gateway
+    external: true
