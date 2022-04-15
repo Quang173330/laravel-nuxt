@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  # The client application container
+  app:
+    build:
+      context: ./
+      dockerfile: ./.docker/prod/app/Dockerfile
+    hostname: client
+    networks:
+      - client
+      - api
+    restart: always
+
+networks:
+  client:
+    external:
+      name: client
+
+  api:
+    external:
+      name: api

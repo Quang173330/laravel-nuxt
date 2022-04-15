@@ -1,0 +1,89 @@
+version: '3.8'
+
+# List of used networks
+networks:
+  api:
+    external:
+      name: api
+
+# List of used volumes
+volumes:
+  postgres:
+    driver: local
+  redis:
+    driver: local
+
+# List of used services
+services:
+  # The API application container
+  app:
+    build:
+      context: ./
+      dockerfile: ./.docker/prod/app/Dockerfile
+# TODO: add storage volume
+#    volumes:
+#      - ./:/var/www/html
+    links:
+      - postgres
+      - redis
+    hostname: api
+    ports:
+      - "8000:8000"
+    networks:
+      - api
+    restart: always
+
+#  # The queue container
+#  queue:
+#    build:
+#      context: ./.docker/prod/queue
+#      dockerfile: Dockerfile
+#    volumes:
+#      - ./:/var/www/html
+#    links:
+#      - postgres
+#      - redis
+#    networks:
+#      - api
+#    restart: always
+#
+#  # The schedule container
+#  schedule:
+#    build:
+#      context: ./.docker/prod/schedule
+#      dockerfile: Dockerfile
+#    volumes:
+#      - ./:/var/www/html
+#    links:
+#      - postgres
+#      - redis
+#      - mailhog
+#    networks:
+#      - api
+#    restart: always
+
+  # The PostgreSQL container
+  postgres:
+    build:
+      context: ./
+      dockerfile: ./.docker/prod/postgres/Dockerfile
+    environment:
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    networks:
+      - api
+    restart: always
+
+  # The Redis container
+  redis:
+    build:
+      context: ./
+      dockerfile: ./.docker/prod/redis/Dockerfile
+    volumes:
+      - redis:/data
+    networks:
+      - api
+    restart: always
